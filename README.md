@@ -1,29 +1,32 @@
 # RELATÓRIO DE ANÁLISE DE POLÍTICAS DE ESCALONAMENTO COM KERNELSHARK
+**Alunos**: Alice Colares e Bernardo Heitz  
+**Disciplina**: Laboratório de Sistemas Operacionais  
+**Data**: Junho 2025 
 
-## Introdução
+## -=-=-=-Introdução -=-=-=-
 
-Este relatório apresenta uma análise detalhada do comportamento de diferentes políticas de escalonamento de threads no Linux, utilizando traces coletados e visualizados com o KernelShark. O objetivo é compreender como cada política afeta a alternância entre threads, a duração dos períodos de execução e o padrão de preempção, fornecendo uma base sólida para discussões sobre desempenho e previsibilidade em sistemas operacionais.
+Este relatório apresenta uma análise detalhada do comportamento de diferentes políticas de escalonamento de threads no Linux, utilizando traces coletados e visualizados com o KernelShark. O objetivo é compreender como cada política afeta a alternância entre threads, a duração dos períodos de execução e o padrão de preempção.
 
 ---
 
-## Descrição do Programa
+## -=-=-=- Descrição do Programa -=-=-=-
 
-O **sched_profiler** é uma aplicação multithread desenvolvida para analisar e demonstrar o comportamento de diferentes políticas de escalonamento do kernel Linux. O programa cria múltiplas threads que escrevem em um buffer compartilhado, permitindo visualizar como o escalonador do sistema operacional alterna entre as threads sob diferentes políticas.
+O **sched_profiler** foi desenvolvido para analisar e demonstrar o comportamento de diferentes políticas de escalonamento do kernel Linux. O programa cria múltiplas threads que escrevem em um buffer compartilhado, permitindo visualizar como o escalonador do sistema operacional alterna entre as threads sob diferentes tipos de políticas de escalonamento.
 
 - Cada thread possui um caractere identificador único (A, B, C, D...)
-- Todas as threads escrevem no mesmo buffer global de forma sincronizada
+- Todas as threads são escritas no mesmo buffer global de forma sincronizada
 - O padrão resultante no buffer reflete a sequência de execução das threads
 - O programa realiza pós-processamento para agregar períodos consecutivos
 - Estatísticas de execução são coletadas e apresentadas
 
-### Parâmetros de Entrada
+### Parâmetros de Entrada:
 
 ```
 ./sched_profiler <tamanho_buffer> <num_threads> <policy>
 ```
 
-- **tamanho_buffer**: Tamanho do buffer compartilhado (inteiro > 0)
-- **num_threads**: Número de threads a serem criadas (1-26)
+- **tamanho_buffer**: Tamanho do buffer: (inteiro > 0)
+- **num_threads**: Número de threads que serão criadas: (1-26)
 - **policy**: Política de escalonamento:
   - `0` = SCHED_OTHER (padrão do sistema)
   - `1` = SCHED_FIFO (tempo real, first-in-first-out)
@@ -46,13 +49,13 @@ O **sched_profiler** é uma aplicação multithread desenvolvida para analisar e
 
 ---
 
-## Metodologia
+## Realização do Trabalho:
 
 Para esta análise, foi utilizado o programa `sched_profiler`, que cria múltiplas threads (A, B, C, D, E) e executa sob diferentes políticas de escalonamento: **SCHED_FIFO**, **SCHED_RR**, **SCHED_OTHER**, **SCHED_IDLE** e **SCHED_LOW_IDLE**.
 
 **Ambiente de Execução:**
-- Os testes foram realizados em ambiente multi-core (QEMU com mais de um core).
-- No KernelShark, os filtros de CPU foram ajustados conforme a visualização desejada, podendo incluir múltiplas CPUs.
+- Os testes foram realizados em ambiente multi-core (QEMU rodando com mais de um core).
+- No KernelShark, os filtros de CPU foram ajustados conforme a visualização desejada, removendo a opção de single-core.
 - Isso permite observar tanto o comportamento de escalonamento em um único core quanto a distribuição das threads entre múltiplos cores.
 
 **Procedimento:**
@@ -60,7 +63,7 @@ Para esta análise, foi utilizado o programa `sched_profiler`, que cria múltipl
 - **Visualização:** Os arquivos de trace foram abertos no KernelShark, aplicando os filtros:
   - Evento: Apenas `sched:sched_switch`
   - Tasks: Apenas os PIDs das threads do `sched_profiler`
-  - CPU: Seleção de CPUs conforme análise (em geral, CPU 0, mas podendo incluir outras CPUs em ambiente multi-core)
+  - CPU: Seleção de CPUs conforme análise (em geral, tirando a opção CPU 0, para que trabalhemos em ambiente multi-core)
 - **Captura de imagens:** Para cada política, foram capturadas:
   - **Graph View:** Linha do tempo das threads.
   - **List View:** Lista de eventos `sched:sched_switch`.
@@ -68,7 +71,7 @@ Para esta análise, foi utilizado o programa `sched_profiler`, que cria múltipl
 
 ---
 
-## Exemplos de Saída
+## -=-=-=- Exemplos de Saída -=-=-=-
 
 ### Entrada:
 ```
@@ -114,9 +117,9 @@ D = 24.0%
 
 ---
 
-## Resultados por Política
+## -=-=-=- Resultados por Política -=-=-=-
 
-### 3.1 SCHED_FIFO
+### 3.1 SCHED_FIFO: 
 
 - **Graph View:** ![Graph View FIFO](kernelshark_sched_fifo.png)
 - **List View:** ![List View FIFO](kernelshark_sched_fifo_list.png), ![List View FIFO 2](kernelshark_sched_fifo_list2.png)
@@ -127,7 +130,7 @@ O escalonador SCHED_FIFO (First-In, First-Out) é uma política de tempo real ba
 
 ---
 
-### 3.2 SCHED_RR
+### 3.2 SCHED_RR:
 
 - **Graph View:** ![Graph View RR](kernelshark_sched_rr.png)
 - **List View:** ![List View RR](kernelshark_sched_rr_list.png), ![List View RR 2](kernelshark_sched_rr_list2.png)
@@ -138,29 +141,29 @@ A política SCHED_RR (Round Robin) também é de tempo real, mas introduz fatias
 
 ---
 
-### 3.3 SCHED_OTHER
+### 3.3 SCHED_OTHER:
 
 - **Graph View:** ![Graph View OTHER](kernelshark_sched_other.png)
 - **List View:** ![List View OTHER](kernelshark_sched_other_list.png), ![List View OTHER 2](kernelshark_sched_other_list2.png)
 - **Zoom em trocas rápidas:** ![Zoom OTHER](kernelshark_sched_other_zoom.png)
 
 **Análise:**  
-O SCHED_OTHER é a política padrão do Linux, baseada em tempo compartilhado (CFS - Completely Fair Scheduler). A timeline revela padrões irregulares, com variação significativa nos períodos de execução das threads. A preempção é dinâmica, ocorrendo conforme o uso recente de CPU de cada thread, o que pode resultar em alternância menos previsível e intervalos de execução variáveis. Isso reflete o objetivo do CFS de distribuir o tempo de CPU de forma justa, mas pode causar latências imprevisíveis em aplicações sensíveis a tempo real.
+O SCHED_OTHER é a política padrão do Linux, baseada em tempo compartilhado (CFS - Completely Fair Scheduler). A timeline revela padrões irregulares, com variação significativa nos períodos de execução das threads. A preempção é dinâmica, ocorrendo conforme o uso recente de CPU de cada thread, o que pode resultar em alternância menos previsível e intervalos de execução variáveis. Isso reflete o objetivo do CFS de distribuir o tempo de CPU de forma justa, mas pode causar latências imprevisíveis em aplicações sensíveis a tempo real.resultante
 
 ---
 
-### 3.4 SCHED_IDLE
+### 3.4 SCHED_IDLE:
 
 - **Graph View:** ![Graph View IDLE](kernelshark_sched_idle.png)
 - **List View:** ![List View IDLE](kernelshark_sched_idle_list.png), ![List View IDLE 2](kernelshark_sched_idle_list2.png)
 - **Zoom em trocas rápidas:** ![Zoom IDLE](kernelshark_sched_idle_zoom.png)
 
 **Análise:**  
-A política SCHED_IDLE destina-se a threads que só devem executar quando o sistema está ocioso. Na timeline, observa-se longos períodos de inatividade das threads, que só são executadas quando não há outras tarefas de maior prioridade. Os períodos de execução são longos, mas esparsos, e as trocas de contexto são raras. Isso é ideal para tarefas de baixa prioridade, como manutenção ou processamento em background, que não devem interferir no desempenho do sistema.
+A política SCHED_IDLE funcionade de modo que, as threads só devem executar quando o sistema está ocioso. Na timeline, observa-se longos períodos de inatividade das threads, que só são executadas quando não há outras tarefas de maior prioridade. Os períodos de execução são longos, mas esparsos, e as trocas de contexto são raras. Isso é ideal para tarefas de baixa prioridade, como manutenção ou processamento em background, que não devem interferir no desempenho do sistema.
 
 ---
 
-### 3.5 SCHED_LOW_IDLE
+### 3.5 SCHED_LOW_IDLE:
 
 - **Graph View:** ![Graph View LOW_IDLE](kernelshark_sched_low_idle.png)
 - **List View:** ![List View LOW_IDLE](kernelshark_sched_low_idle_list.png), ![List View LOW_IDLE 2](kernelshark_sched_low_idle_list2.png)
@@ -171,7 +174,7 @@ O SCHED_LOW_IDLE (quando disponível) funciona de forma semelhante ao SCHED_IDLE
 
 ---
 
-## Comparação entre Políticas
+## -=-=-=- Comparação entre Políticas -=-=-=-
 
 - **Imagem Comparativa:** ![Comparação entre políticas](kernelshark_comparison.png)
 
@@ -180,19 +183,17 @@ A imagem acima apresenta, lado a lado, as timelines das diferentes políticas de
 
 - **FIFO e RR:** As execuções são regulares, com alternância previsível entre as threads. No FIFO, cada thread executa por longos períodos, enquanto no RR há alternância mais frequente devido à fatia de tempo.
 - **OTHER:** A alternância entre threads é mais dinâmica e menos previsível, com variações nos períodos de execução e preempções frequentes, refletindo o funcionamento do CFS.
-- **IDLE e LOW_IDLE:** As execuções são esparsas, ocorrendo apenas quando o sistema está ocioso. Os períodos de inatividade são longos, e as trocas de contexto são raras, evidenciando a baixa prioridade dessas políticas.
-
-Essa comparação visual reforça a análise individual de cada política, facilitando a compreensão das vantagens e limitações de cada abordagem para diferentes tipos de aplicações.
+- **IDLE e LOW_IDLE:** As execuções são mais esparsas e acabam ocorrendo apenas quando o sistema está ocioso. Os períodos de inatividade são longos, e as trocas de contexto são raras, evidenciando a baixa prioridade dessas políticas.
 
 ---
 
-## Execução do Programa sched_profiler
+## Execução do Programa sched_profiler:
 
 O programa `sched_profiler` foi utilizado como base experimental para gerar os traces analisados neste relatório. O código-fonte está disponível no arquivo `sched_profiler.c` deste repositório.
 
-### Exemplo de execução e saída para cada política:
+### -=-=-=- Exemplo de execução e saída para cada política -=-=-=-
 
-#### SCHED_OTHER
+#### SCHED_OTHER:
 ```
 # trace-cmd record -o trace_other_v3.dat -e sched:sched_switch ./sched_profiler 500 4 0
 === SCHED_PROFILER ===
@@ -228,7 +229,7 @@ C = 24.0%
 D = 26.0%
 ```
 
-#### SCHED_FIFO
+#### SCHED_FIFO:
 ```
 # trace-cmd record -o trace_fifo_v3.dat -e sched:sched_switch ./sched_profiler 500 4 1
 === SCHED_PROFILER ===
@@ -264,7 +265,7 @@ C = 24.0%
 D = 24.0%
 ```
 
-#### SCHED_RR
+#### SCHED_RR:
 ```
 # trace-cmd record -o trace_rr_v3.dat -e sched:sched_switch ./sched_profiler 500 4 2
 === SCHED_PROFILER ===
@@ -300,7 +301,7 @@ C = 24.0%
 D = 24.0%
 ```
 
-#### SCHED_IDLE
+#### SCHED_IDLE: 
 ```
 # trace-cmd record -o trace_idle_v3.dat -e sched:sched_switch ./sched_profiler 500 4 5
 === SCHED_PROFILER ===
@@ -338,7 +339,7 @@ C = 26.0%
 D = 24.0%
 ```
 
-#### SCHED_LOW_IDLE
+#### SCHED_LOW_IDLE:
 ```
 # trace-cmd record -o trace_low_idle_v3.dat -e sched:sched_switch ./sched_profiler 500 4 7
 === SCHED_PROFILER ===
@@ -376,20 +377,20 @@ C = 26.0%
 D = 26.0%
 ```
 
-### Referência ao Código-Fonte
+### Referência ao Código-Fonte:
 
-O código-fonte do programa utilizado para os experimentos está disponível no arquivo `sched_profiler.c` deste repositório. Ele implementa a criação de múltiplas threads, sincronização via semáforo, simulação de carga de trabalho e configuração da política de escalonamento para cada thread. O programa também gera estatísticas detalhadas sobre a execução, facilitando a análise dos resultados obtidos nos traces. 
+O código-fonte do código utilizado para esse trabalho, está no arquivo `sched_profiler.c`. Ele implementa a criação de múltiplas threads, sincronização via semáforo, simulação de carga de trabalho e configuração da política de escalonamento para cada thread. O programa também gera estatísticas detalhadas sobre a execução.
 
 ---
 
-## Implementação Técnica
+## -=-=-=- Implementação Técnica -=-=-=-
 
-### Sincronização
+### Sincronização:
 - **Semáforo binário**: Controla acesso ao buffer compartilhado
 - **Seção crítica**: Escrita no buffer e incremento do ponteiro
 - **Thread safety**: Operações atômicas garantidas
 
-### Estruturas de Dados
+### Estruturas de Dados:
 ```c
 char *global_buffer;           // Buffer compartilhado
 int buffer_index;              // Índice atual do buffer
@@ -397,31 +398,30 @@ int *thread_schedule_count;    // Contador por thread
 sem_t mutex;                   // Semáforo de sincronização
 ```
 
-### Algoritmo de Trabalho Computacional
+### Algoritmo de Trabalho Computacional:
 - Loops intensivos para consumir tempo de CPU
 - Simula carga computacional real
 - Permite visualização de padrões de escalonamento
 
 ---
 
-## Compilação
+## -=-=-=- Compilação -=-=-=-
 
-### Ambiente de Desenvolvimento
+### Ambiente de Desenvolvimento:
 - **Sistema**: Linux (Buildroot/QEMU)
-- **Compilador**: GCC 10.3.0 (cross-compiler i686)
+- **Compilador**: GCC (i686)
 - **Arquitetura**: i386
 - **Biblioteca**: pthread, uClibc
 
-### Comando de Compilação
+### Comando de Compilação:
 ```
 i686-buildroot-linux-uclibc-gcc -o sched_profiler sched_profiler.c -lpthread -Wall -static
 ```
 
 ---
 
-## Captura de Traces
-
-### Comando trace-cmd
+## -=-=-=- Captura de Traces -=-=-=-
+### Comando trace-cmd:
 ```
 # Montar debugfs
 mount -t debugfs none /sys/kernel/debug
@@ -433,7 +433,7 @@ trace-cmd record -o trace_<policy>.dat -e sched:sched_switch ./sched_profiler 50
 trace-cmd report trace_<policy>.dat
 ```
 
-### Arquivos Gerados
+### Arquivos Gerados:
 - `trace_other_v3.dat` - SCHED_OTHER
 - `trace_fifo_v3.dat` - SCHED_FIFO  
 - `trace_rr_v3.dat` - SCHED_RR
@@ -442,15 +442,15 @@ trace-cmd report trace_<policy>.dat
 
 ---
 
-## Análise dos Resultados
+## -=-=-=- Análise dos Resultados -=-=-=-
 
-### Métricas Observadas
+### Métricas Observadas:
 1. **Distribuição de tempo**: Percentual de CPU por thread
 2. **Períodos de execução**: Número de trocas de contexto
 3. **Padrões de execução**: Regularidade do escalonamento
 4. **Latência**: Tempo entre execuções da mesma thread
 
-### Diferenças Observadas
+### Diferenças Observadas:
 - **FIFO/RR**: Comportamento determinístico e regular
 - **OTHER**: Comportamento adaptativo e dinâmico
 - **IDLE**: Comportamento de baixa prioridade
@@ -458,16 +458,16 @@ trace-cmd report trace_<policy>.dat
 
 ---
 
-## Ambiente de Execução
+## -=-=-=- Ambiente de Execução -=-=-=-
 
-### Especificações do Sistema
+### Especificações do Sistema:
 - **Kernel**: Linux (QEMU, multi-core)
 - **Arquitetura**: i386 (QEMU)
 - **CPUs**: múltiplos cores
 - **Memória**: 128MB
 - **Sistema de arquivos**: ext2
 
-### Ferramentas Utilizadas
+### Ferramentas Utilizadas:
 - **QEMU**: Emulação do sistema
 - **trace-cmd**: Captura de eventos do kernel
 - **KernelShark**: Visualização gráfica dos traces
@@ -475,12 +475,11 @@ trace-cmd report trace_<policy>.dat
 
 ---
 
-## Conclusões
+## -=-=-=- Conclusões -=-=-=-
 
-O **sched_profiler** demonstra com sucesso as diferenças comportamentais entre as políticas de escalonamento do Linux, fornecendo uma ferramenta educativa para compreensão dos mecanismos internos do kernel e permitindo análise visual através de traces capturados com ferramentas padrão do Linux. A execução em ambiente multi-core permitiu observar tanto a alternância entre threads em um mesmo core quanto a distribuição entre múltiplos cores, enriquecendo a análise dos resultados.
-
+O **sched_profiler** demonstra as diferenças dos comportamentos dos diferentes tipos de políticas de escalonamento do Linux. O **sched_profiler** ajuda na compreensão dos mecanismos internos do kernel e permite de forma visual, realizar analises através de traces capturados com ferramentas padrão do Linux. A execução em ambiente multi-core permitiu observar a alternância entre threads.
 ---
 
-**Autores**: Alice Colares e Bernardo Heitz  
+**Alunos**: Alice Colares e Bernardo Heitz  
 **Disciplina**: Laboratório de Sistemas Operacionais  
 **Data**: Junho 2025 
